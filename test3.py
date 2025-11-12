@@ -7,6 +7,7 @@ import pygame
 # 1. Inicialización
 pygame.init()
 pygame.font.init() # Inicializa el módulo de fuentes
+pygame.mixer.init() # <<<--- INICIALIZAR EL MIXER DE SONIDO
 ancho, alto = 1280, 720
 screen = pygame.display.set_mode((ancho, alto))
 pygame.display.set_caption("Simulación Termodinámica")
@@ -16,26 +17,35 @@ clock = pygame.time.Clock()
 font_hud = pygame.font.Font(None, 30)
 
 
-# --- CLASE PARTICULA
+# --- CLASE PARTICULA (MODIFICADA) ---
 class Particula:
-    def __init__(self, x, y, radio, color_inicial, vel_max):
+    def __init__(self, x, y, radio, color_inicial, vel_max, temp_ambiente, temp_ebullicion):
         self.x = x
         self.y = y
         self.radio = radio
         self.color = color_inicial
         self.vx = random.uniform(-vel_max, vel_max)
         self.vy = random.uniform(-vel_max, vel_max)
+        
+        # ¡NUEVO! Temperatura individual de la partícula
+        self.temperatura_individual = temp_ambiente 
+        self.temp_ambiente_ref = temp_ambiente # Referencia para mapear color
+        self.temp_ebullicion_ref = temp_ebullicion # Referencia para mapear color
+
     def mover(self, num_steps):
         self.x += self.vx / num_steps
         self.y += self.vy / num_steps
+
     def dibujar(self, superficie):
         pygame.draw.circle(superficie, self.color, (int(self.x), int(self.y)), self.radio)
     
-    def update_color(self, temp_ratio, color_frio, color_caliente):
-        """ Actualiza el color basado en la temperatura general (temp_ratio) """
-        # 'ratio' ahora es 'temp_ratio'
-        ratio = temp_ratio 
-        ratio = max(0, min(1, ratio))
+    # --- MÉTODO MODIFICADO ---
+    def update_color(self, color_frio, color_caliente):
+        """ Actualiza el color basado en la temperatura individual de la partícula. """
+        # Mapea la temperatura individual de la partícula a un ratio de color
+        ratio = (self.temperatura_individual - self.temp_ambiente_ref) / \
+                (self.temp_ebullicion_ref - self.temp_ambiente_ref)
+        ratio = max(0, min(1, ratio)) # Asegura que el ratio esté entre 0 y 1
         
         r = int(color_frio[0] + (color_caliente[0] - color_frio[0]) * ratio)
         g = int(color_frio[1] + (color_caliente[1] - color_frio[1]) * ratio)
@@ -115,6 +125,16 @@ except pygame.error as e:
     print(f"Error al cargar la imagen: {e}")
     sys.exit()
 
+# --- Cargar Sonido ---
+try:
+    # ¡Asegúrate de tener un archivo "boiling.wav" en la misma carpeta!
+    sonido_hervir = pygame.mixer.Sound("boiling.wav") 
+    sonido_hervir.set_volume(0.5) # Opcional: ajustar volumen (0.0 a 1.0)
+except pygame.error as e:
+    print(f"Error al cargar el sonido: {e}")
+    sonido_hervir = None # Si falla, el sonido no se reproducirá
+
+
 # CONFIGURACIÓN DE SUB-PASOS
 SUB_STEPS = 8
 
@@ -122,19 +142,24 @@ SUB_STEPS = 8
 CALOR_ESPECIFICO_AGUA = 4186
 TEMP_AMBIENTE = 20.0
 TEMP_EBULLICION = 100.0
-K_DISIPACION = 10.0
+K_DISIPACION = 10.0 # Factor de disipación de calor al ambiente
+
+# ¡NUEVO! Constantes para la transferencia de calor entre partículas
+K_CALOR_ZONA_CALOR = 1000.0 # Cuánta potencia se transfiere a las partículas en la zona de calor
+K_ENFRIAMIENTO_PARTICULA = 0.07 # Cuánta potencia pierde cada partícula al ambiente
 
 # Constantes Físicas Base
 GRAVEDAD = 0.02
-MAX_EMPUJE_CALOR = 0.05
+MAX_EMPUJE_CALOR_PARTICULA = 0.0005 # Empuje que genera una partícula caliente
 MAX_VELOCIDAD_BASE = 2.0
 MAX_VELOCIDAD_TOPE = 5.0
 
-# CONSTANTES DE NIVEL
+# CONSTANTES DE NIVEL (CORREGIDAS)
 MASA_MIN = 0.5 # kg
 MASA_MAX = 2.0 # kg
-Y_NIVEL_BAJO = 400 # Y-pixel para la masa mínima
-Y_NIVEL_ALTO = 160 # Y-pixel para la masa máxima
+Y_NIVEL_FONDO = 450 # Y-pixel del fondo real de la pava (coincide con centro_y_arco)
+Y_NIVEL_TOPE = 160 # Y-pixel para la masa máxima
+
 
 # CONSTANTES DE VAPORIZACIÓN
 CALOR_LATENTE_VAPORIZACION = 2260000 # J/kg (Energía para convertir agua en vapor)
@@ -152,13 +177,15 @@ POTENCIA_PAVA = 2000.0
 MASA_AGUA = 1.0 # Empezamos con 1.0 kg
 
 # Variables de Estado
+# Ahora, 'temperatura_actual' representará el promedio del agua, útil para el HUD.
 temperatura_actual = TEMP_AMBIENTE
 tiempo_simulado = 0.0
 esta_hirviendo = False
-pava_encendida = True # ¡NUEVA VARIABLE DE ESTADO! (Empieza encendida)
+pava_encendida = True 
+sonido_hervir_reproduciendose = False 
 
 # Constantes de Color
-COLOR_FRIO =(0,100,255) ; COLOR_CALIENTE = (255,0,0)
+COLOR_FRIO = (0,100,255); COLOR_CALIENTE =  (255,0,0)
 
 # Coordenadas de las paredes
 PAREDES_CONTENEDOR = [
@@ -201,20 +228,37 @@ PARTICULAS_POR_KG = 150
 
 min_x_spawn = 265; max_x_spawn = 500 
 
+# --- FUNCIÓN CREAR_PARTICULA (CORREGIDA) ---
 def crear_particula(masa_actual):
     """Crea y devuelve una nueva partícula DENTRO del volumen de agua actual."""
-    nivel_superior_y = map_value(masa_actual, MASA_MIN, MASA_MAX, Y_NIVEL_BAJO, Y_NIVEL_ALTO)
     
-    # El spawn ocurre entre el nuevo nivel superior y el nivel más bajo
+    # Mapea la masa actual al nivel Y superior del agua
+    # MASA_MIN (0.5kg) -> Y_NIVEL_FONDO (450)
+    # MASA_MAX (2.0kg) -> Y_NIVEL_TOPE (160)
+    nivel_superior_y = map_value(masa_actual, MASA_MIN, MASA_MAX, Y_NIVEL_FONDO, Y_NIVEL_TOPE)
+    
+    # El spawn ocurre entre el nuevo nivel superior y el fondo
     px = random.randint(min_x_spawn, max_x_spawn)
-    py = random.randint(int(nivel_superior_y), Y_NIVEL_BAJO) 
     
-    return Particula(px, py, RADIO_PARTICULA, COLOR_FRIO, VELOCIDAD_MAX_INICIAL)
+    # --- LA CORRECCIÓN ESTÁ AQUÍ ---
+    # Asegura que 'inicio' (nivel_superior_y) sea siempre <= 'fin' (Y_NIVEL_FONDO)
+    y_start = int(nivel_superior_y)
+    y_end = Y_NIVEL_FONDO
+    
+    # Si por alguna razón y_start > y_end (rango inválido), fíjalos
+    if y_start > y_end:
+        y_start = y_end
+        
+    py = random.randint(y_start, y_end) 
+    # --- FIN DE LA CORRECCIÓN ---
+    
+    # ¡MODIFICADO! Se pasa TEMP_AMBIENTE y TEMP_EBULLICION a la partícula
+    return Particula(px, py, RADIO_PARTICULA, COLOR_FRIO, VELOCIDAD_MAX_INICIAL, TEMP_AMBIENTE, TEMP_EBULLICION)
 
 def crear_particula_vapor(masa_actual):
     """Crea una partícula de vapor en la superficie del agua."""
     # Mapea la masa al nivel Y de la superficie
-    nivel_superior_y = map_value(masa_actual, MASA_MIN, MASA_MAX, Y_NIVEL_BAJO, Y_NIVEL_ALTO)
+    nivel_superior_y = map_value(masa_actual, MASA_MIN, MASA_MAX, Y_NIVEL_FONDO, Y_NIVEL_TOPE)
     
     # Rango de spawn en la superficie
     px = random.randint(min_x_spawn + 20, max_x_spawn - 20)
@@ -257,7 +301,8 @@ while run:
                         PARTICULAS.append(crear_particula(MASA_AGUA))
                         
             elif masa_down_rect.collidepoint(mouse_pos):
-                if MASA_AGUA > MASA_MIN:
+                # Usar una comprobación más segura para floats
+                if MASA_AGUA > MASA_MIN + 0.05: 
                     MASA_AGUA -= 0.1
                     # Quitar partículas
                     for _ in range(int(PARTICULAS_POR_KG / 10)):
@@ -266,114 +311,148 @@ while run:
         #Lógica de teclado (ACTUALIZADA PARA RESET Y ON/OFF)
         if evento.type == pygame.KEYDOWN:
             if evento.key == pygame.K_r:
-                temperatura_actual = TEMP_AMBIENTE
+                temperatura_actual = TEMP_AMBIENTE # Reinicia el promedio
                 tiempo_simulado = 0.0
                 esta_hirviendo = False
-                pava_encendida = True # Reinicia encendida
+                pava_encendida = True 
                 
-                # Resetear partículas
+                if sonido_hervir: # <<<--- DETENER SONIDO AL REINICIAR
+                    sonido_hervir.stop()
+                sonido_hervir_reproduciendose = False
+                
+                # Resetear partículas (y sus temperaturas individuales)
                 PARTICULAS.clear()
-                PARTICULAS_VAPOR.clear() # <- LIMPIAR VAPOR
+                PARTICULAS_VAPOR.clear() 
                 
                 cantidad_actual = int(MASA_AGUA * PARTICULAS_POR_KG)
-                for _ in range(cantidad_actual):
-                    PARTICULAS.append(crear_particula(MASA_AGUA)) # Rellena al nivel actual
+                for _ in range(cantidad_inicial):
+                    PARTICULAS.append(crear_particula(MASA_AGUA)) 
             
-            # LÓGICA PARA ENCENDER/APAGAR
             elif evento.key == pygame.K_SPACE:
-                pava_encendida = not pava_encendida # Invierte el estado
-
+                pava_encendida = not pava_encendida 
+                if not pava_encendida: # <<<--- DETENER SONIDO AL APAGAR
+                    if sonido_hervir:
+                        sonido_hervir.stop()
+                    sonido_hervir_reproduciendose = False
+            
+    # B. ACTUALIZACIÓN DE LA LÓGICA
     
     # Hacemos global el acumulador para modificarlo
     globals()['masa_vaporizada_acumulada'] = masa_vaporizada_acumulada
     
-    # --- 0. DETERMINAR POTENCIA APLICADA   ---
+    # --- 0. DETERMINAR POTENCIA APLICADA (MODIFICADO) ---
+    potencia_aplicada_total = 0
     if pava_encendida:
-        potencia_aplicada = POTENCIA_PAVA
-    else:
-        potencia_aplicada = 0
-        # Si la pava está apagada, deja de hervir inmediatamente
-        esta_hirviendo = False 
+        potencia_aplicada_total = POTENCIA_PAVA
     
-    # --- 1. CÁLCULO TERMODINÁMICO -----
     
-    # Calculamos la potencia neta (siempre se pierde calor al ambiente)
-    P_perdida = K_DISIPACION * (temperatura_actual - TEMP_AMBIENTE)
-    # MODIFICADO: Usamos 'potencia_aplicada' en lugar de 'POTENCIA_PAVA'
-    P_neta = potencia_aplicada - P_perdida
+    # --- REORDENADO: 1. APLICAR PÉRDIDAS Y GANANCIAS DE CALOR ---
+    ZONA_CALOR_Y = 430 # Definir la zona de calor aquí
+    P_perdida_total = 0.0
 
-    if esta_hirviendo:
-        # --- LÓGICA DE EBULLICIÓN ---
-        if P_neta > 0 and MASA_AGUA > 0:
-            # 1. Calcular cuánta energía se usa para vaporizar
-            energia_para_vaporizar = P_neta * dt
+    if PARTICULAS:
+        masa_por_particula = MASA_AGUA / len(PARTICULAS)
+        particulas_en_zona_calor = [p for p in PARTICULAS if p.y > ZONA_CALOR_Y]
+        
+        potencia_por_particula_calor = 0
+        if pava_encendida and particulas_en_zona_calor:
+            potencia_por_particula_calor = potencia_aplicada_total / len(particulas_en_zona_calor)
+
+        for p in PARTICULAS:
+            # --- ENFRIAMIENTO (SIEMPRE OCURRE) ---
+            if p.temperatura_individual > TEMP_AMBIENTE:
+                P_perdida_individual = K_ENFRIAMIENTO_PARTICULA * (p.temperatura_individual - TEMP_AMBIENTE)
+                P_perdida_total += P_perdida_individual # Acumular pérdida total
+                
+                energia_perdida = P_perdida_individual * dt
+                dT_individual_perdida = energia_perdida / (masa_por_particula * CALOR_ESPECIFICO_AGUA)
+                p.temperatura_individual -= dT_individual_perdida
+                p.temperatura_individual = max(TEMP_AMBIENTE, p.temperatura_individual)
+                
+            # --- CALENTAMIENTO (SI ESTÁ EN LA ZONA DE CALOR) ---
+            if pava_encendida and p in particulas_en_zona_calor:
+                energia_ganada = potencia_por_particula_calor * dt
+                dT_individual_ganada = energia_ganada / (masa_por_particula * CALOR_ESPECIFICO_AGUA)
+                
+                # Las partículas se calientan, pero no por encima de la ebullición
+                p.temperatura_individual += dT_individual_ganada
+                p.temperatura_individual = min(TEMP_EBULLICION, p.temperatura_individual)
+
+
+    # --- REORDENADO: 2. CALCULAR ESTADO PROMEDIO (DESPUÉS DE CAMBIOS) ---
+    if PARTICULAS:
+        temperatura_actual = sum(p.temperatura_individual for p in PARTICULAS) / len(PARTICULAS)
+    else:
+        temperatura_actual = TEMP_AMBIENTE
+
+    # --- REORDENADO: 3. DECIDIR SI HIERVE ---
+    if temperatura_actual >= TEMP_EBULLICION - 0.1: # 99.9°C
+        esta_hirviendo = True
+    else:
+        esta_hirviendo = False 
+
             
-            # 2. Calcular cuánta masa se convierte en vapor
+    # --- REORDENADO: 4. LÓGICA DE VAPORIZACIÓN Y SONIDO ---
+    if esta_hirviendo:
+        # --- Lógica de Sonido ---
+        if pava_encendida and sonido_hervir and not sonido_hervir_reproduciendose:
+            sonido_hervir.play(loops=-1) # loops=-1 para que se repita
+            sonido_hervir_reproduciendose = True
+            
+        # --- Lógica de Vaporización ---
+        # La energía neta es la potencia de la pava menos la que se está perdiendo al ambiente
+        P_neta_para_vaporizar = potencia_aplicada_total - P_perdida_total
+        
+        # Solo vaporiza si hay energía "extra" después de compensar las pérdidas
+        if P_neta_para_vaporizar > 0 and MASA_AGUA > 0:
+            energia_para_vaporizar = P_neta_para_vaporizar * dt
             masa_a_vaporizar = energia_para_vaporizar / CALOR_LATENTE_VAPORIZACION
             
-            # 3. Actualizar la masa de agua restante
             MASA_AGUA = max(0, MASA_AGUA - masa_a_vaporizar)
-            
-            # 4. Usar un acumulador para gestionar la creación/eliminación de partículas
-            #    (porque masa_a_vaporizar es muy pequeña por frame)
             masa_vaporizada_acumulada += masa_a_vaporizar
             
-            # 5. Calcular cuántas partículas de líquido debemos gestionar
             particulas_a_gestionar = int(masa_vaporizada_acumulada * PARTICULAS_POR_KG)
             
             if particulas_a_gestionar > 0:
-                # 6. Restar del acumulador la parte que ya procesamos
                 masa_vaporizada_acumulada -= particulas_a_gestionar / PARTICULAS_POR_KG
                 
                 for _ in range(particulas_a_gestionar):
-                    # 7. Quitar una partícula de LÍQUIDO (si quedan)
                     if PARTICULAS:
-                        # Quitar una al azar para evitar que se vacíe solo por arriba
-                        PARTICULAS.pop(random.randint(0, len(PARTICULAS)-1)) 
+                        # Quitamos la partícula de líquido con la temperatura más alta para simular vaporización
+                        particula_a_quitar = max(PARTICULAS, key=lambda p: p.temperatura_individual)
+                        PARTICULAS.remove(particula_a_quitar) 
                     
-                    # 8. Añadir N partículas de VAPOR
                     for _ in range(PARTICULAS_VAPOR_POR_LIQUIDA):
                         PARTICULAS_VAPOR.append(crear_particula_vapor(MASA_AGUA))
 
-        # Si se acaba el agua, la pava deja de hervir (y se quema!)
-        if MASA_AGUA <= 0:
+        if MASA_AGUA <= 0: # Si se acaba el agua
             esta_hirviendo = False
+            if sonido_hervir: 
+                sonido_hervir.stop()
+            sonido_hervir_reproduciendose = False
             
-    else:
-        # --- LÓGICA DE CALENTAMIENTO (Lo que tenías antes) ---
-        if P_neta > 0 and MASA_AGUA > 0:
-            # Calcular cambio de temperatura
-            dT = (P_neta / (MASA_AGUA * CALOR_ESPECIFICO_AGUA)) * dt
-            temperatura_actual += dT
-        
-        # El tiempo solo avanza mientras se calienta (o puedes sacarlo del if)
-        # (MODIFICACIÓN: El tiempo avanza siempre, incluso al enfriar)
-        if pava_encendida:
-            tiempo_simulado += dt
+    else: # Si no está hirviendo
+        if sonido_hervir and sonido_hervir_reproduciendose: 
+            sonido_hervir.stop()
+            sonido_hervir_reproduciendose = False
+    
+    # El tiempo solo avanza si la pava está encendida
+    if pava_encendida:
+        tiempo_simulado += dt
 
-        # Comprobar si hemos llegado a la ebullición
-        if temperatura_actual >= TEMP_EBULLICION:
-            temperatura_actual = TEMP_EBULLICION
-            esta_hirviendo = True
-            masa_vaporizada_acumulada = 0.0 # Reiniciar el acumulador al empezar a hervir
-            print(f"¡Hervido en {tiempo_simulado:.2f} segundos!")
-        
-        # Asegurar que no se enfríe por debajo de la temperatura ambiente
-        if P_neta <= 0 and MASA_AGUA > 0: # Permitir enfriamiento si la P_neta es negativa
-             dT = (P_neta / (MASA_AGUA * CALOR_ESPECIFICO_AGUA)) * dt
-             temperatura_actual += dT
-             temperatura_actual = max(TEMP_AMBIENTE, temperatura_actual)
-        
-
-    # --- 2. MAPEAR TEMPERATURA A FÍSICA ---
-    temp_ratio = (temperatura_actual - TEMP_AMBIENTE) / (TEMP_EBULLICION - TEMP_AMBIENTE)
-    temp_ratio = max(0, min(1, temp_ratio))
-    empuje_actual = temp_ratio * MAX_EMPUJE_CALOR
-    max_vel_actual = MAX_VELOCIDAD_BASE + (temp_ratio * (MAX_VELOCIDAD_TOPE - MAX_VELOCIDAD_BASE))
-
-    # --- 3. BUCLE DE SUB-PASOS (Física de colisión) ---
+    # --- 2. MAPEAR TEMPERATURA INDIVIDUAL A FÍSICA (MODIFICADO) ---
+    # (Esta sección no cambia)
+    
+    # --- 3. BUCLE DE SUB-PASOS (Física de colisión y convección) ---
     for p in PARTICULAS:
         
+        # Mapear la temperatura individual de la partícula a empuje y velocidad máxima
+        temp_ratio_individual = (p.temperatura_individual - TEMP_AMBIENTE) / (TEMP_EBULLICION - TEMP_AMBIENTE)
+        temp_ratio_individual = max(0, min(1, temp_ratio_individual))
+        
+        empuje_individual = temp_ratio_individual * MAX_EMPUJE_CALOR_PARTICULA
+        max_vel_individual = MAX_VELOCIDAD_BASE + (temp_ratio_individual * (MAX_VELOCIDAD_TOPE - MAX_VELOCIDAD_BASE))
+
         for _ in range(SUB_STEPS):
             p.mover(SUB_STEPS) 
             
@@ -382,21 +461,21 @@ while run:
 
             p.vy += GRAVEDAD / SUB_STEPS
             
-            ZONA_CALOR_Y = 430 
-            if p.y > ZONA_CALOR_Y:
-                p.vy -= empuje_actual / SUB_STEPS
+            # Aplicar empuje basado en la temperatura individual de la partícula
+            # El empuje se aplica en toda la columna de agua
+            p.vy -= empuje_individual / SUB_STEPS 
             
             velocidad_actual = math.sqrt(p.vx**2 + p.vy**2)
-            if velocidad_actual > max_vel_actual:
-                factor = max_vel_actual / velocidad_actual
+            if velocidad_actual > max_vel_individual:
+                factor = max_vel_individual / velocidad_actual
                 p.vx *= factor
                 p.vy *= factor
         
-        # Ahora el color depende de temp_ratio, no de la velocidad individual
-        p.update_color(temp_ratio, COLOR_FRIO, COLOR_CALIENTE)
+        # --- LLAMADA A UPDATE_COLOR MODIFICADA ---
+        # El color ahora se basa en la temperatura individual de la partícula
+        p.update_color(COLOR_FRIO, COLOR_CALIENTE)
 
-
-    # Iteramos sobre una copia [:] para poder eliminar elementos de la lista original
+    # --- 4. ACTUALIZACIÓN DEL VAPOR ---
     for pv in PARTICULAS_VAPOR[:]:
         pv.update(dt)
         if not pv.esta_viva:
@@ -430,22 +509,19 @@ while run:
     screen.blit(texto_plus, (masa_up_rect.x + 7, masa_up_rect.y + 2))
     screen.blit(texto_minus, (masa_down_rect.x + 8, masa_down_rect.y + 2))
     
-    texto_temp = font_hud.render(f"Temp: {temperatura_actual:.1f}°C", True, (0,0,0))
+    texto_temp = font_hud.render(f"Temp Prom: {temperatura_actual:.1f}°C", True, (0,0,0)) # Ahora es temp promedio
     texto_tiempo = font_hud.render(f"Tiempo: {tiempo_simulado:.1f} s", True, (0,0,0))
     texto_potencia = font_hud.render(f"Potencia: {POTENCIA_PAVA:.0f} W", True, (0,0,0))
     texto_masa = font_hud.render(f"Masa: {MASA_AGUA:.1f} kg", True, (0,0,0))
     
-    # --- ¡NUEVO INDICADOR DE ESTADO! ---
     color_estado = (0, 150, 0) if pava_encendida else (200, 0, 0) # Verde si ON, Rojo si OFF
     texto_estado = font_hud.render(f"Estado: {'ENCENDIDA' if pava_encendida else 'APAGADA'}", True, color_estado)
     
     texto_particulas = font_hud.render(f"Partículas: {len(PARTICULAS)}", True, (100,100,100))
     
-    # --- ¡NUEVAS INSTRUCCIONES! ---
     texto_reset = font_hud.render("Presiona 'R' para reiniciar", True, (50,50,50))
     texto_toggle = font_hud.render("[ESPACIO] para On/Off", True, (50,50,50))
     
-    # --- ¡NUEVO TEXTO AMBIENTE! ---
     texto_ambiente = font_hud.render(f"T. Ambiente: {TEMP_AMBIENTE:.1f}°C", True, (100, 100, 100))
     
     screen.blit(texto_temp, (X_MENU_ANCLA, 20))
@@ -453,13 +529,10 @@ while run:
     screen.blit(texto_potencia, (X_MENU_ANCLA + 65, 85)) 
     screen.blit(texto_masa, (X_MENU_ANCLA + 65, 115))   
     
-    # --- ¡NUEVO ORDEN DE BLIT! ---
     screen.blit(texto_estado, (X_MENU_ANCLA, 145))
     screen.blit(texto_particulas, (X_MENU_ANCLA, 175))
     screen.blit(texto_reset, (X_MENU_ANCLA, 205))
     screen.blit(texto_toggle, (X_MENU_ANCLA, 225))
-    
-    # --- ¡BLIT DEL TEXTO AMBIENTE! ---
     screen.blit(texto_ambiente, (X_MENU_ANCLA, 255))
 
 
