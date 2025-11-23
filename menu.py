@@ -1,5 +1,5 @@
 import pygame, sys
-from constantes import H0, H2, H4
+from constantes import H0, H2, H3, H4
 from clases import Button
 from funciones import aproximacion_arco
 from primera_ley import primera_ley
@@ -25,17 +25,21 @@ except pygame.error as e:
 
 # Imagenes
 try:
-    pava_img = pygame.image.load('Imagenes/pava.webp')
+    pava_img = pygame.image.load('Imagenes/pava.png')
     heladera_img = pygame.image.load('Imagenes/heladera.png')
+    mesa_img = pygame.image.load('Imagenes/mesa.png')
+    fondo_img = pygame.image.load('Imagenes/pizarra_fondo.jpg')
     pava_img_escalada = pygame.transform.scale(pava_img, (500, 500))
     heladera_img_escalada = pygame.transform.scale(heladera_img, (450, 600))
+    mesa_img_escalada = pygame.transform.scale(mesa_img, (700, 600))
 except pygame.error as e:
     print(f"Error al cargar la imagen: {e}")
     sys.exit()
 
 #Botones
-pava_btn = Button(350, 400, pava_img, pava_img, 0.25)
-heladera_btn = Button(700, 300, heladera_img, heladera_img, 0.2)
+pava_btn = Button(350, 350, pava_img, pava_img, 0.4)
+heladera_btn = Button(700, 250, heladera_img, heladera_img, 0.2)
+lista_botones = [pava_btn, heladera_btn]
 
 aproximacion_arco()
 
@@ -43,7 +47,11 @@ run = True
 
 while run:
     pygame.display.set_caption("Menu")
+
+    #Variables
     keys = pygame.key.get_pressed()
+    hover_any = False
+    acciones = []
 
     for evento in pygame.event.get():
         if (evento.type == pygame.QUIT) or (keys[pygame.K_ESCAPE]):
@@ -51,22 +59,36 @@ while run:
             pygame.quit()
             sys.exit()
 
-    title_h0 = H0.render("TERMODINAMICA", True, "black")
-    primera_h2 = H2.render("Primera ley", True, "black")
-    segunda_h2 = H2.render("Segunda Ley", True, "black")
-    integrantes_h4 = H4.render("Burgos Pablo - Genaro de Boni - Sajnovsky Jose - Maxi", True, "black")
+    title_h0 = H0.render("TERMODINAMICA", True, "white")
+    primera_h2 = H2.render("Primera ley", True, "white")
+    segunda_h2 = H2.render("Segunda Ley", True, "white")
+    selecciona_h3 = H3.render("Seleccione su simulacion:", True, "white")
+    integrantes_h4 = H4.render("Burgos Pablo - Genaro de Boni - Sajnovsky Jose - Maxi", True, "white")
 
-    screen.fill("white")
+    screen.blit(fondo_img, (0, 0))
+    screen.blit(mesa_img_escalada, (275, 450))
+
     screen.blit(title_h0, (250,60))
     screen.blit(primera_h2, (350,600))
     screen.blit(segunda_h2, (700,600))
-    screen.blit(integrantes_h4, (100, 700))
+    screen.blit(selecciona_h3, (300, 250))
+    screen.blit(integrantes_h4, (400, 700))
 
+    # Dibujar botones
+    for b in lista_botones:
+        action, hover = b.draw(screen, False)
+        acciones.append(action)
+        hover_any |= hover
+        
+    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND if hover_any else pygame.SYSTEM_CURSOR_ARROW)
 
-    if pava_btn.draw(screen, False):
+    # Acciones de los botones
+    if acciones[0]:   # pava_btn
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         primera_ley(clock, screen, pava_img_escalada, sonido_hervir)
 
-    elif heladera_btn.draw(screen, False):
+    if acciones[1]:   # heladera_btn
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         segunda_ley(clock, screen, heladera_img_escalada)
 
     pygame.display.update()

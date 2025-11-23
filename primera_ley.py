@@ -12,9 +12,16 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
     sonido_hervir_reproduciendose = False
     min_x_spawn = 265
     max_x_spawn = 500 
+    
+    # VARIABLES DE LOS BOTONES QUE AGREGUE
+    potencia_actual = "baja"
+    potencia_min = 1200
+    potencia_max = 1500
+    modo_pava = "hervir"
+    tmp_max = 100.1
 
     # Variables de control
-    potencia_pava = 2000
+    potencia_pava = 1200
     masa_agua = 1.0
 
     # Variables de simulacion
@@ -32,6 +39,22 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
     masa_up_rect = pygame.Rect(X_MENU_ANCLA + 30, 110, 25, 25)
     texto_plus = font_hud.render("+", True, COLOR_TEXTO_BOTON)
     texto_minus = font_hud.render("-", True, COLOR_TEXTO_BOTON)
+
+    # BOTONES PARA EL RANGO DE POTENCIAS DE LA PAVA
+    baja_potencia = pygame.Rect(X_MENU_ANCLA, 140, 135, 25)
+    media_potencia = pygame.Rect(X_MENU_ANCLA + 150, 140, 150, 25)
+    alta_potencia = pygame.Rect(X_MENU_ANCLA + 320, 140, 132, 25)
+    texto_baja_potencia = font_hud.render("Baja Potencia", True , COLOR_TEXTO_BOTON)
+    texto_media_potencia = font_hud.render("Media Potencia", True , COLOR_TEXTO_BOTON)
+    texto_alta_potencia = font_hud.render("Alta Potencia", True , COLOR_TEXTO_BOTON)
+
+    # BOTONES PARA EL MODO DE LA PAVA (A QUE TEMPERATURA DE APAGA)
+    modo_mate = pygame.Rect(X_MENU_ANCLA, 170, 108, 25)
+    modo_cafe = pygame.Rect(X_MENU_ANCLA + 130, 170, 105, 25)
+    modo_hervir = pygame.Rect(X_MENU_ANCLA + 250, 170, 122, 25) 
+    texto_modo_mate = font_hud.render("Modo Mate", True , COLOR_TEXTO_BOTON)
+    texto_modo_cafe = font_hud.render("Modo Cafe", True , COLOR_TEXTO_BOTON)
+    texto_modo_hervir = font_hud.render("Modo Hervir", True , COLOR_TEXTO_BOTON)
 
 
     # Creación inicial de partículas
@@ -75,6 +98,28 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
                         for _ in range(int(PARTICULAS_POR_KG / 10)):
                             if particulas: particulas.pop()
 
+                    # Colisiones para los tipos de pavas
+                elif baja_potencia.collidepoint(mouse_pos):
+                    potencia_actual = "baja"
+                    POTENCIA_PAVA = 1200
+                elif media_potencia.collidepoint(mouse_pos):
+                    potencia_actual = "media"
+                    POTENCIA_PAVA = 1800
+                elif alta_potencia.collidepoint(mouse_pos):
+                    potencia_actual = "alta"
+                    POTENCIA_PAVA = 2200
+
+                # Colisiones del modo de la pava
+                elif modo_mate.collidepoint(mouse_pos):
+                    modo_pava = "mate"
+                    tmp_max = 75.0
+                elif modo_cafe.collidepoint(mouse_pos):
+                    modo_pava = "cafe"
+                    tmp_max = 85.0
+                elif modo_hervir.collidepoint(mouse_pos):
+                    modo_pava = "hervir"
+                    tmp_max = 100.1 #Para que no frene
+
 
             #Lógica de teclado
             if keys[pygame.K_q]:
@@ -109,6 +154,21 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
         # Hacemos global el acumulador para modificarlo
         globals()['masa_vaporizada_acumulada'] = masa_vaporizada_acumulada
 
+        # Verifico cual va a ser la potencia minima y maxima segun cual boton apreten
+        if (potencia_actual == "baja"):
+            potencia_min = 1200
+            potencia_max = 1500
+        elif (potencia_actual == "media"):
+            potencia_min = 1800
+            potencia_max = 2000
+        elif (potencia_actual == "alta"):
+            potencia_min = 2200
+            potencia_max = 2400
+
+        # Apago la pava en la temperatura maxima segun el modo elegido
+        if (temperatura_actual >= tmp_max):
+            pava_encendida = False
+        
         # DETERMINAR POTENCIA APLICADA
         potencia_aplicada_total = 0
         if pava_encendida:
@@ -169,7 +229,7 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
         # El tiempo solo avanza si la pava está encendida
         if pava_encendida:
             tiempo_simulado += dt
-
+        
         # BUCLE DE SUB-PASOS (Física de colisión y convección)
         for p in particulas:
 
@@ -222,11 +282,30 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
         pygame.draw.rect(screen, COLOR_BOTON, masa_up_rect)
         pygame.draw.rect(screen, COLOR_BOTON, masa_down_rect)
 
+        # BOTONES DE POTENCIA
+        pygame.draw.rect(screen, COLOR_BOTON, baja_potencia)
+        pygame.draw.rect(screen, COLOR_BOTON, media_potencia)
+        pygame.draw.rect(screen, COLOR_BOTON, alta_potencia)
+        
+        # BOTONES DE MODO
+        pygame.draw.rect(screen, COLOR_BOTON, modo_mate)
+        pygame.draw.rect(screen, COLOR_BOTON, modo_cafe)
+        pygame.draw.rect(screen, COLOR_BOTON, modo_hervir)
+    
         screen.blit(texto_plus, (pot_up_rect.x + 7, pot_up_rect.y + 2))
         screen.blit(texto_minus, (pot_down_rect.x + 8, pot_down_rect.y + 2))
         screen.blit(texto_plus, (masa_up_rect.x + 7, masa_up_rect.y + 2))
         screen.blit(texto_minus, (masa_down_rect.x + 8, masa_down_rect.y + 2))
 
+        # Texto de botones de la potencia
+        screen.blit(texto_baja_potencia, (X_MENU_ANCLA, 145))
+        screen.blit(texto_media_potencia, (X_MENU_ANCLA + 150, 145))
+        screen.blit(texto_alta_potencia, (X_MENU_ANCLA + 320, 145))
+        # Texto de los botones del modo
+        screen.blit(texto_modo_mate, (X_MENU_ANCLA, 175))
+        screen.blit(texto_modo_cafe, (X_MENU_ANCLA + 130, 175))
+        screen.blit(texto_modo_hervir, (X_MENU_ANCLA + 250, 175))
+        
         color_estado = (0, 150, 0) if pava_encendida else (200, 0, 0) # Verde si ON, Rojo si OFF
 
         texto_temp = font_hud.render(f"Temp Prom: {temperatura_actual:.1f}°C", True, (0,0,0)) # Ahora es temp promedio
@@ -244,11 +323,11 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
         screen.blit(texto_tiempo, (X_MENU_ANCLA, 50))
         screen.blit(texto_potencia, (X_MENU_ANCLA + 65, 85)) 
         screen.blit(texto_masa, (X_MENU_ANCLA + 65, 115))   
-        screen.blit(texto_estado, (X_MENU_ANCLA, 145))
-        screen.blit(texto_particulas, (X_MENU_ANCLA, 175))
-        screen.blit(texto_reset, (X_MENU_ANCLA, 205))
-        screen.blit(texto_toggle, (X_MENU_ANCLA, 225))
-        screen.blit(texto_salir, (X_MENU_ANCLA, 245))
-        screen.blit(texto_ambiente, (X_MENU_ANCLA, 275))
+        screen.blit(texto_estado, (X_MENU_ANCLA, 205))
+        screen.blit(texto_particulas, (X_MENU_ANCLA, 235))
+        screen.blit(texto_reset, (X_MENU_ANCLA, 265))
+        screen.blit(texto_toggle, (X_MENU_ANCLA, 285))
+        screen.blit(texto_salir, (X_MENU_ANCLA, 305))
+        screen.blit(texto_ambiente, (X_MENU_ANCLA, 335))
 
         pygame.display.flip()

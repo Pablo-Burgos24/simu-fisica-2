@@ -91,14 +91,15 @@ class Button():
         image = self.selected_image if is_selected else self.image
         surface.blit(image, (self.rect.x, self.rect.y))
 
-        # Detectar clic
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1 and not self.clicked:
-                #select_sound.play()
-                self.clicked = True
-                action = True
+        hover = self.rect.collidepoint(pos)
+
+        # Detectar click
+        if hover and pygame.mouse.get_pressed()[0] == 1 and not self.clicked:
+            #select_sound.play()
+            self.clicked = True
+            action = True
 
         if pygame.mouse.get_pressed()[0] == 0:
             self.clicked = False
 
-        return action
+        return action, hover

@@ -52,8 +52,8 @@ PARTICULAS_POR_KG = 150
 ZONA_CALOR_Y = 430
 
 # Fuentes
-H0 = pygame.font.Font("Fuentes/Merriweather_48pt-Regular.ttf", 84)
-H1 = pygame.font.Font("Fuentes/Merriweather_48pt-Regular.ttf", 48)
-H2 = pygame.font.Font("Fuentes/Merriweather_48pt-Regular.ttf", 32)
-H3 = pygame.font.Font("Fuentes/Merriweather_48pt-Regular.ttf", 24)
-H4 = pygame.font.Font("Fuentes/Merriweather_48pt-Regular.ttf", 16)
+H0 = pygame.font.Font("Fuentes/HandyGeorge.ttf", 84)
+H1 = pygame.font.Font("Fuentes/HandyGeorge.ttf", 48)
+H2 = pygame.font.Font("Fuentes/HandyGeorge.ttf", 32)
+H3 = pygame.font.Font("Fuentes/HandyGeorge.ttf", 24)
+H4 = pygame.font.Font("Fuentes/HandyGeorge.ttf", 16)
