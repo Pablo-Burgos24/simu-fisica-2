@@ -30,15 +30,15 @@ try:
     mesa_img = pygame.image.load('Imagenes/mesa.png')
     fondo_img = pygame.image.load('Imagenes/pizarra_fondo.jpg')
     pava_img_escalada = pygame.transform.scale(pava_img, (500, 500))
-    heladera_img_escalada = pygame.transform.scale(heladera_img, (450, 600))
-    mesa_img_escalada = pygame.transform.scale(mesa_img, (700, 600))
+    heladera_img_escalada = pygame.transform.scale(heladera_img, (450, 650))
+    mesa_img_escalada = pygame.transform.scale(mesa_img, (750, 600))
 except pygame.error as e:
     print(f"Error al cargar la imagen: {e}")
     sys.exit()
 
 #Botones
-pava_btn = Button(350, 350, pava_img, pava_img, 0.4)
-heladera_btn = Button(700, 250, heladera_img, heladera_img, 0.2)
+pava_btn = Button(350, 400, pava_img, pava_img, 0.4)
+heladera_btn = Button(725, 300, heladera_img, heladera_img, 0.2)
 lista_botones = [pava_btn, heladera_btn]
 
 aproximacion_arco()
@@ -66,12 +66,12 @@ while run:
     integrantes_h4 = H4.render("Burgos Pablo - Genaro de Boni - Sajnovsky Jose - Maxi", True, "white")
 
     screen.blit(fondo_img, (0, 0))
-    screen.blit(mesa_img_escalada, (275, 450))
+    screen.blit(mesa_img_escalada, (275, 500))
 
-    screen.blit(title_h0, (250,60))
-    screen.blit(primera_h2, (350,600))
-    screen.blit(segunda_h2, (700,600))
-    screen.blit(selecciona_h3, (300, 250))
+    screen.blit(title_h0, (250, 25))
+    screen.blit(primera_h2, (350, 250))
+    screen.blit(segunda_h2, (725, 250))
+    screen.blit(selecciona_h3, (300, 150))
     screen.blit(integrantes_h4, (400, 700))
 
     # Dibujar botones

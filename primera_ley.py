@@ -17,12 +17,12 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
     potencia_actual = "baja"
     potencia_min = 1200
     potencia_max = 1500
-    modo_pava = "hervir"
     tmp_max = 100.1
 
     # Variables de control
     potencia_pava = 1200
     masa_agua = 1.0
+    P_perdida_total = 0.0
 
     # Variables de simulacion
     particulas = []
@@ -79,10 +79,11 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
                 mouse_pos = pygame.mouse.get_pos()
 
                 if pot_up_rect.collidepoint(mouse_pos):
-                    potencia_pava += 100
+                    if (potencia_pava < potencia_max):
+                        potencia_pava += 100
                 elif pot_down_rect.collidepoint(mouse_pos):
-                    potencia_pava -= 100; 
-                    if potencia_pava < 0: potencia_pava = 0
+                    if (potencia_pava > potencia_min):
+                        potencia_pava -= 100; 
 
                 elif masa_up_rect.collidepoint(mouse_pos):
                     if masa_agua < MASA_MAX:
@@ -101,23 +102,20 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
                     # Colisiones para los tipos de pavas
                 elif baja_potencia.collidepoint(mouse_pos):
                     potencia_actual = "baja"
-                    POTENCIA_PAVA = 1200
+                    potencia_pava = 1200
                 elif media_potencia.collidepoint(mouse_pos):
                     potencia_actual = "media"
-                    POTENCIA_PAVA = 1800
+                    potencia_pava = 1800
                 elif alta_potencia.collidepoint(mouse_pos):
                     potencia_actual = "alta"
-                    POTENCIA_PAVA = 2200
+                    potencia_pava = 2200
 
                 # Colisiones del modo de la pava
                 elif modo_mate.collidepoint(mouse_pos):
-                    modo_pava = "mate"
                     tmp_max = 75.0
                 elif modo_cafe.collidepoint(mouse_pos):
-                    modo_pava = "cafe"
                     tmp_max = 85.0
                 elif modo_hervir.collidepoint(mouse_pos):
-                    modo_pava = "hervir"
                     tmp_max = 100.1 #Para que no frene
 
 
@@ -166,6 +164,7 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
             potencia_max = 2400
 
         # Apago la pava en la temperatura maxima segun el modo elegido
+        
         if (temperatura_actual >= tmp_max):
             pava_encendida = False
         
@@ -213,17 +212,13 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
                             particulas.remove(particula_a_quitar) 
 
                         for _ in range(PARTICULAS_VAPOR_POR_LIQUIDA):
-                            particulas_vapor.append(crear_particula_vapor(masa_agua))
+                            particulas_vapor.append(crear_particula_vapor(masa_agua, min_x_spawn, max_x_spawn))
 
             # Si se acaba el agua
             if masa_agua <= 0:
                 esta_hirviendo = False
                 if sonido_hervir: 
                     sonido_hervir.stop()
-                sonido_hervir_reproduciendose = False
-
-            if sonido_hervir and sonido_hervir_reproduciendose: 
-                sonido_hervir.stop()
                 sonido_hervir_reproduciendose = False
 
         # El tiempo solo avanza si la pava está encendida
@@ -318,6 +313,15 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
         texto_toggle = font_hud.render("[ESPACIO] para On/Off", True, (50,50,50))
         texto_salir = font_hud.render("'Q' para salir", True, (50,50,50))
         texto_ambiente = font_hud.render(f"T. Ambiente: {TEMP_AMBIENTE:.1f}°C", True, (100, 100, 100))
+        linea_punteada = font_hud.render("------------------------------------------------------------------------", True, (100, 100, 100))
+        texto_calculos = font_hud.render("CALCULOS DE LA PRIMER LEY", True, (50, 50, 50))
+        texto_calor_pava = font_hud.render("Calor entregado por la resistencia de la pava:", True, (50, 50, 50))
+        formula_calor_pava = font_hud.render(f"Qp = P * t ---> {potencia_pava} * {tiempo_simulado:.2f} = {(potencia_pava * tiempo_simulado):.1f} J", True, (50, 50, 50))
+        texto_calor_agua = font_hud.render("Calor absorbido por el agua:", True, (50, 50, 50))
+        formula_calor_agua = font_hud.render(f"Qa = m * c * ΔT ---> {masa_agua:.1f} * 4186 * ({temperatura_actual:.1f} - {TEMP_AMBIENTE:.0f}) = {masa_agua * 4186 * (temperatura_actual - TEMP_AMBIENTE):.0f} J", True, (50, 50, 50))
+        texto_calor_vaporizacion = font_hud.render("Calor de vaporizacion:", True, (50, 50, 50))
+        formula_calor_vaporizacion = font_hud.render(f"Ql = mv * Lv ---> {masa_vaporizada_acumulada:.1f} * {CALOR_LATENTE_VAPORIZACION:.0f} = {(masa_vaporizada_acumulada * CALOR_LATENTE_VAPORIZACION):.1f} J", True, (50, 50, 50))
+
 
         screen.blit(texto_temp, (X_MENU_ANCLA, 20))
         screen.blit(texto_tiempo, (X_MENU_ANCLA, 50))
@@ -329,5 +333,15 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
         screen.blit(texto_toggle, (X_MENU_ANCLA, 285))
         screen.blit(texto_salir, (X_MENU_ANCLA, 305))
         screen.blit(texto_ambiente, (X_MENU_ANCLA, 335))
+        screen.blit(linea_punteada, (X_MENU_ANCLA, 370))
+        screen.blit(texto_calculos, (X_MENU_ANCLA, 400))
+        screen.blit(texto_calor_pava, (X_MENU_ANCLA, 430))
+        screen.blit(formula_calor_pava, (X_MENU_ANCLA, 460))
+        screen.blit(texto_calor_agua, (X_MENU_ANCLA, 490))
+        screen.blit(formula_calor_agua, (X_MENU_ANCLA, 520))
+
+        if esta_hirviendo:
+            screen.blit(texto_calor_vaporizacion, (X_MENU_ANCLA, 550))
+            screen.blit(formula_calor_vaporizacion, (X_MENU_ANCLA, 580))
 
         pygame.display.flip()
