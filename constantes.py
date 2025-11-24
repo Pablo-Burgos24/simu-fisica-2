@@ -5,7 +5,7 @@ SUB_STEPS = 8
 
 # termodinamicas
 CALOR_ESPECIFICO_AGUA = 4186
-TEMP_AMBIENTE = 98.0
+TEMP_AMBIENTE = 20.0
 TEMP_EBULLICION = 100.0
 K_DISIPACION = 10.0 # Factor de disipación de calor al ambiente
 K_CALOR_ZONA_CALOR = 1000.0 # Cuánta potencia se transfiere a las partículas en la zona de calor
