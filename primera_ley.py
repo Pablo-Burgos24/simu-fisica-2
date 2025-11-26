@@ -3,7 +3,9 @@ from constantes import *
 from clases import *
 from funciones import *
 
-def primera_ley(clock, SCREEN):
+pygame.mixer.init()
+
+def primera_ley(clock):
     # Variables de Estado
     temperatura_actual = TEMP_AMBIENTE
     tiempo_simulado = 0.0
@@ -29,32 +31,29 @@ def primera_ley(clock, SCREEN):
     particulas_vapor = []
     masa_vaporizada_acumulada = 0.0
 
-    #Fuentes
-    font_hud = pygame.font.Font(None, 30)
-
     # botones
-    pot_down_rect = pygame.Rect(X_MENU_ANCLA, 80, 25, 25)
-    pot_up_rect = pygame.Rect(X_MENU_ANCLA + 30, 80, 25, 25)
-    masa_down_rect = pygame.Rect(X_MENU_ANCLA, 110, 25, 25)
-    masa_up_rect = pygame.Rect(X_MENU_ANCLA + 30, 110, 25, 25)
-    texto_plus = font_hud.render("+", True, COLOR_TEXTO_BOTON)
-    texto_minus = font_hud.render("-", True, COLOR_TEXTO_BOTON)
+    pot_down_rect = pygame.Rect(X_MENU_ANCLA, 100, 25, 25)
+    pot_up_rect = pygame.Rect(X_MENU_ANCLA + 30, 100, 25, 25)
+    masa_down_rect = pygame.Rect(X_MENU_ANCLA, 130, 25, 25)
+    masa_up_rect = pygame.Rect(X_MENU_ANCLA + 30, 130, 25, 25)
+    texto_plus = FONT_HUD.render("+", True, COLOR_TEXTO_BOTON)
+    texto_minus = FONT_HUD.render("-", True, COLOR_TEXTO_BOTON)
 
     # BOTONES PARA EL RANGO DE POTENCIAS DE LA PAVA
-    baja_potencia = pygame.Rect(X_MENU_ANCLA, 140, 135, 25)
-    media_potencia = pygame.Rect(X_MENU_ANCLA + 150, 140, 150, 25)
-    alta_potencia = pygame.Rect(X_MENU_ANCLA + 320, 140, 132, 25)
-    texto_baja_potencia = font_hud.render("Baja Potencia", True , COLOR_TEXTO_BOTON)
-    texto_media_potencia = font_hud.render("Media Potencia", True , COLOR_TEXTO_BOTON)
-    texto_alta_potencia = font_hud.render("Alta Potencia", True , COLOR_TEXTO_BOTON)
+    baja_potencia = pygame.Rect(X_MENU_ANCLA, 160, 135, 25)
+    media_potencia = pygame.Rect(X_MENU_ANCLA + 150, 160, 150, 25)
+    alta_potencia = pygame.Rect(X_MENU_ANCLA + 320, 160, 132, 25)
+    texto_baja_potencia = FONT_HUD.render("Baja Potencia", True , COLOR_TEXTO_BOTON)
+    texto_media_potencia = FONT_HUD.render("Media Potencia", True , COLOR_TEXTO_BOTON)
+    texto_alta_potencia = FONT_HUD.render("Alta Potencia", True , COLOR_TEXTO_BOTON)
 
     # BOTONES PARA EL MODO DE LA PAVA (A QUE TEMPERATURA DE APAGA)
-    modo_mate = pygame.Rect(X_MENU_ANCLA, 170, 108, 25)
-    modo_cafe = pygame.Rect(X_MENU_ANCLA + 130, 170, 105, 25)
-    modo_hervir = pygame.Rect(X_MENU_ANCLA + 250, 170, 122, 25) 
-    texto_modo_mate = font_hud.render("Modo Mate", True , COLOR_TEXTO_BOTON)
-    texto_modo_cafe = font_hud.render("Modo Cafe", True , COLOR_TEXTO_BOTON)
-    texto_modo_hervir = font_hud.render("Modo Hervir", True , COLOR_TEXTO_BOTON)
+    modo_mate = pygame.Rect(X_MENU_ANCLA, 190, 108, 25)
+    modo_cafe = pygame.Rect(X_MENU_ANCLA + 130, 190, 105, 25)
+    modo_hervir = pygame.Rect(X_MENU_ANCLA + 250, 190, 122, 25) 
+    texto_modo_mate = FONT_HUD.render("Modo Mate", True , COLOR_TEXTO_BOTON)
+    texto_modo_cafe = FONT_HUD.render("Modo Cafe", True , COLOR_TEXTO_BOTON)
+    texto_modo_hervir = FONT_HUD.render("Modo Hervir", True , COLOR_TEXTO_BOTON)
 
 
     # Creación inicial de partículas
@@ -294,55 +293,55 @@ def primera_ley(clock, SCREEN):
         SCREEN.blit(texto_minus, (masa_down_rect.x + 8, masa_down_rect.y + 2))
 
         # Texto de botones de la potencia
-        SCREEN.blit(texto_baja_potencia, (X_MENU_ANCLA, 145))
-        SCREEN.blit(texto_media_potencia, (X_MENU_ANCLA + 150, 145))
-        SCREEN.blit(texto_alta_potencia, (X_MENU_ANCLA + 320, 145))
+        SCREEN.blit(texto_baja_potencia, (X_MENU_ANCLA, 165))
+        SCREEN.blit(texto_media_potencia, (X_MENU_ANCLA + 150, 165))
+        SCREEN.blit(texto_alta_potencia, (X_MENU_ANCLA + 320, 165))
         # Texto de los botones del modo
-        SCREEN.blit(texto_modo_mate, (X_MENU_ANCLA, 175))
-        SCREEN.blit(texto_modo_cafe, (X_MENU_ANCLA + 130, 175))
-        SCREEN.blit(texto_modo_hervir, (X_MENU_ANCLA + 250, 175))
+        SCREEN.blit(texto_modo_mate, (X_MENU_ANCLA, 195))
+        SCREEN.blit(texto_modo_cafe, (X_MENU_ANCLA + 130, 195))
+        SCREEN.blit(texto_modo_hervir, (X_MENU_ANCLA + 250, 195))
         
         color_estado = (0, 150, 0) if pava_encendida else (200, 0, 0) # Verde si ON, Rojo si OFF
 
-        texto_temp = font_hud.render(f"Temp Prom: {temperatura_actual:.1f}°C", True, (0,0,0)) # Ahora es temp promedio
-        texto_tiempo = font_hud.render(f"Tiempo: {tiempo_simulado:.1f} s", True, (0,0,0))
-        texto_potencia = font_hud.render(f"Potencia: {potencia_pava:.0f} W", True, (0,0,0))
-        texto_masa = font_hud.render(f"Masa: {masa_agua:.1f} kg", True, (0,0,0))
-        texto_estado = font_hud.render(f"Estado: {'ENCENDIDA' if pava_encendida else 'APAGADA'}", True, color_estado)
-        texto_particulas = font_hud.render(f"Partículas: {len(particulas)}", True, (100,100,100))
-        texto_reset = font_hud.render("Presiona 'R' para reiniciar", True, (50,50,50))
-        texto_toggle = font_hud.render("[ESPACIO] para On/Off", True, (50,50,50))
-        texto_salir = font_hud.render("'Q' para salir", True, (50,50,50))
-        texto_ambiente = font_hud.render(f"T. Ambiente: {TEMP_AMBIENTE:.1f}°C", True, (100, 100, 100))
-        linea_punteada = font_hud.render("------------------------------------------------------------------------", True, (100, 100, 100))
-        texto_calculos = font_hud.render("CALCULOS DE LA PRIMER LEY", True, (50, 50, 50))
-        texto_calor_pava = font_hud.render("Calor entregado por la resistencia de la pava:", True, (50, 50, 50))
-        formula_calor_pava = font_hud.render(f"Qp = P * t ---> {potencia_pava} * {tiempo_simulado:.2f} = {(potencia_pava * tiempo_simulado):.1f} J", True, (50, 50, 50))
-        texto_calor_agua = font_hud.render("Calor absorbido por el agua:", True, (50, 50, 50))
-        formula_calor_agua = font_hud.render(f"Qa = m * c * ΔT ---> {masa_agua:.1f} * 4186 * ({temperatura_actual:.1f} - {TEMP_AMBIENTE:.0f}) = {masa_agua * 4186 * (temperatura_actual - TEMP_AMBIENTE):.0f} J", True, (50, 50, 50))
-        texto_calor_vaporizacion = font_hud.render("Calor de vaporizacion:", True, (50, 50, 50))
-        formula_calor_vaporizacion = font_hud.render(f"Ql = mv * Lv ---> {masa_vaporizada_acumulada:.1f} * {CALOR_LATENTE_VAPORIZACION:.0f} = {(masa_vaporizada_acumulada * CALOR_LATENTE_VAPORIZACION):.1f} J", True, (50, 50, 50))
+        texto_temp = FONT_HUD.render(f"Temp Prom: {temperatura_actual:.1f}°C", True, COLOR_TEXTO_1) # Ahora es temp promedio
+        texto_tiempo = FONT_HUD.render(f"Tiempo: {tiempo_simulado:.1f} s", True, COLOR_TEXTO_1)
+        texto_potencia = FONT_HUD.render(f"Potencia: {potencia_pava:.0f} W", True, COLOR_TEXTO_1)
+        texto_masa = FONT_HUD.render(f"Masa: {masa_agua:.1f} kg", True, COLOR_TEXTO_1)
+        texto_estado = FONT_HUD.render(f"Estado: {'ENCENDIDA' if pava_encendida else 'APAGADA'}", True, color_estado)
+        texto_particulas = FONT_HUD.render(f"Partículas: {len(particulas)}", True, COLOR_TEXTO_3)
+        texto_reset = FONT_HUD.render("Presiona 'R' para reiniciar", True, COLOR_TEXTO_2)
+        texto_toggle = FONT_HUD.render("[ESPACIO] para On/Off", True, COLOR_TEXTO_2)
+        texto_salir = FONT_HUD.render("'Q' para salir", True, COLOR_TEXTO_2)
+        texto_ambiente = FONT_HUD.render(f"T. Ambiente: {TEMP_AMBIENTE:.1f}°C", True, COLOR_TEXTO_3)
+        linea_punteada = FONT_HUD.render("------------------------------------------------------------------------", True, COLOR_TEXTO_3)
+        texto_calculos = FONT_HUD.render("CALCULOS DE LA PRIMER LEY", True, COLOR_TEXTO_2)
+        texto_calor_pava = FONT_HUD.render("Calor entregado por la resistencia de la pava:", True, COLOR_TEXTO_2)
+        formula_calor_pava = FONT_HUD.render(f"Qp = P * t ---> {potencia_pava} * {tiempo_simulado:.2f} = {(potencia_pava * tiempo_simulado):.1f} J", True, COLOR_TEXTO_2)
+        texto_calor_agua = FONT_HUD.render("Calor absorbido por el agua:", True, COLOR_TEXTO_2)
+        formula_calor_agua = FONT_HUD.render(f"Qa = m * c * ΔT ---> {masa_agua:.1f} * 4186 * ({temperatura_actual:.1f} - {TEMP_AMBIENTE:.0f}) = {masa_agua * 4186 * (temperatura_actual - TEMP_AMBIENTE):.0f} J", True, COLOR_TEXTO_2)
+        texto_calor_vaporizacion = FONT_HUD.render("Calor de vaporizacion:", True, COLOR_TEXTO_2)
+        formula_calor_vaporizacion = FONT_HUD.render(f"Ql = mv * Lv ---> {masa_vaporizada_acumulada:.1f} * {CALOR_LATENTE_VAPORIZACION:.0f} = {(masa_vaporizada_acumulada * CALOR_LATENTE_VAPORIZACION):.1f} J", True, COLOR_TEXTO_2)
 
 
-        SCREEN.blit(texto_temp, (X_MENU_ANCLA, 20))
-        SCREEN.blit(texto_tiempo, (X_MENU_ANCLA, 50))
-        SCREEN.blit(texto_potencia, (X_MENU_ANCLA + 65, 85)) 
-        SCREEN.blit(texto_masa, (X_MENU_ANCLA + 65, 115))   
-        SCREEN.blit(texto_estado, (X_MENU_ANCLA, 205))
-        SCREEN.blit(texto_particulas, (X_MENU_ANCLA, 235))
-        SCREEN.blit(texto_reset, (X_MENU_ANCLA, 265))
-        SCREEN.blit(texto_toggle, (X_MENU_ANCLA, 285))
-        SCREEN.blit(texto_salir, (X_MENU_ANCLA, 305))
-        SCREEN.blit(texto_ambiente, (X_MENU_ANCLA, 335))
-        SCREEN.blit(linea_punteada, (X_MENU_ANCLA, 370))
-        SCREEN.blit(texto_calculos, (X_MENU_ANCLA, 400))
-        SCREEN.blit(texto_calor_pava, (X_MENU_ANCLA, 430))
-        SCREEN.blit(formula_calor_pava, (X_MENU_ANCLA, 460))
-        SCREEN.blit(texto_calor_agua, (X_MENU_ANCLA, 490))
-        SCREEN.blit(formula_calor_agua, (X_MENU_ANCLA, 520))
+        SCREEN.blit(texto_temp, (X_MENU_ANCLA, 40))
+        SCREEN.blit(texto_tiempo, (X_MENU_ANCLA, 70))
+        SCREEN.blit(texto_potencia, (X_MENU_ANCLA + 65, 105)) 
+        SCREEN.blit(texto_masa, (X_MENU_ANCLA + 65, 135))   
+        SCREEN.blit(texto_estado, (X_MENU_ANCLA, 225))
+        SCREEN.blit(texto_particulas, (X_MENU_ANCLA, 255))
+        SCREEN.blit(texto_reset, (X_MENU_ANCLA, 285))
+        SCREEN.blit(texto_toggle, (X_MENU_ANCLA, 305))
+        SCREEN.blit(texto_salir, (X_MENU_ANCLA, 325))
+        SCREEN.blit(texto_ambiente, (X_MENU_ANCLA, 355))
+        SCREEN.blit(linea_punteada, (X_MENU_ANCLA, 390))
+        SCREEN.blit(texto_calculos, (X_MENU_ANCLA, 420))
+        SCREEN.blit(texto_calor_pava, (X_MENU_ANCLA, 450))
+        SCREEN.blit(formula_calor_pava, (X_MENU_ANCLA, 480))
+        SCREEN.blit(texto_calor_agua, (X_MENU_ANCLA, 510))
+        SCREEN.blit(formula_calor_agua, (X_MENU_ANCLA, 540))
 
         if esta_hirviendo:
-            SCREEN.blit(texto_calor_vaporizacion, (X_MENU_ANCLA, 550))
-            SCREEN.blit(formula_calor_vaporizacion, (X_MENU_ANCLA, 580))
+            SCREEN.blit(texto_calor_vaporizacion, (X_MENU_ANCLA, 570))
+            SCREEN.blit(formula_calor_vaporizacion, (X_MENU_ANCLA, 400))
 
         pygame.display.flip()

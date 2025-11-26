@@ -28,6 +28,7 @@ except pygame.error as e:
     SONIDO_HERVIR = None
 
 SUB_STEPS = 8
+X_MENU_ANCLA = 750
 
 # termodinamicas
 CALOR_ESPECIFICO_AGUA = 4186
@@ -54,20 +55,21 @@ CALOR_LATENTE_VAPORIZACION = 2260000 # J/kg (Energía para convertir agua en vap
 PARTICULAS_VAPOR_POR_LIQUIDA = 3      # Cuántas partículas de vapor crea 1 de líquido
 VIDA_PARTICULA_VAPOR = 2.5           # Segundos
 
-# color
-COLOR_FRIO = (0,100,255)
-COLOR_CALIENTE =  (255,0,0)
-
 # Coordenadas de las paredes
 PAREDES_CONTENEDOR = [
     ((260, 150), (505, 150)), ((505, 150), (520, 200)), ((520, 200), (535, 300)),
     ((535, 300), (550, 450)), ((230, 450), (245, 300)), ((245, 300), (260, 150)),
 ]
 
-# botones
-X_MENU_ANCLA = 750
+# Colores
+COLOR_CONGELADO = (0,0,139)
+COLOR_FRIO = (0,100,255)
+COLOR_CALIENTE =  (255,0,0)
 COLOR_BOTON = (220, 220, 220)
 COLOR_TEXTO_BOTON = (0, 0, 0)
+COLOR_TEXTO_1 = (255, 255, 255)
+COLOR_TEXTO_2 = (205, 205, 205)
+COLOR_TEXTO_3 = (155, 155, 155)
 
 # particulas
 RADIO_PARTICULA = 5
@@ -77,9 +79,23 @@ PARTICULAS_POR_KG = 150
 # zona de calor
 ZONA_CALOR_Y = 430
 
+# Constantes para la segunda ley
+NIVEL_FONDO_HELADERA = 550
+NIVEL_TOPE_HELADERA = 300
+
+NIVEL_FONDO_FREEZER = 200
+NIVEL_TOPE_FREEZER = 100
+
+MIN_SPAWN = 268
+MAX_SPAWN = 573
+
+TEM_MIN_HELADERA = 0
+TEM_MIN_FREEZER = -10
+
 # Fuentes
 H0 = pygame.font.Font("Fuentes/HandyGeorge.ttf", 84)
 H1 = pygame.font.Font("Fuentes/HandyGeorge.ttf", 48)
 H2 = pygame.font.Font("Fuentes/HandyGeorge.ttf", 32)
 H3 = pygame.font.Font("Fuentes/HandyGeorge.ttf", 24)
 H4 = pygame.font.Font("Fuentes/HandyGeorge.ttf", 16)
+FONT_HUD = pygame.font.Font(None, 30)

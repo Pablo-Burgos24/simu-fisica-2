@@ -20,11 +20,17 @@ class Particula():
     def dibujar(self, superficie):
         pygame.draw.circle(superficie, self.color, (int(self.x), int(self.y)), self.radio)
     
-    def update_color(self, color_frio, color_caliente):
+    def update_color(self, color_frio, color_caliente, temp_min = None, temp_max = None):
         """ Actualiza el color basado en la temperatura individual de la partícula. """
         # Mapea la temperatura individual de la partícula a un ratio de color
-        ratio = (self.temperatura_individual - self.temp_ambiente_ref) / \
-                (self.temp_ebullicion_ref - self.temp_ambiente_ref)
+
+        # Si no se pasan min/max, usar los valores de referencia (modo calentamiento)
+        if temp_min is None:
+            temp_min = self.temp_ambiente_ref
+        if temp_max is None:
+            temp_max = self.temp_ebullicion_ref
+
+        ratio = (self.temperatura_individual - temp_min) / (temp_max - temp_min)
         ratio = max(0, min(1, ratio)) # Asegura que el ratio esté entre 0 y 1
         
         r = int(color_frio[0] + (color_caliente[0] - color_frio[0]) * ratio)

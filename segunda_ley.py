@@ -3,15 +3,6 @@ from constantes import *
 from clases import *
 from funciones import *
 
-# Constantes para la segunda ley
-NIVEL_FONDO_HELADERA = 550
-NIVEL_TOPE_HELADERA = 300
-
-NIVEL_FONDO_FREEZER = 200
-NIVEL_TOPE_FREEZER = 100
-
-MIN_SPAWN = 268
-MAX_SPAWN = 573
 
 # funciones para la segunda ley
 def crear_particula_heladera(masa_actual, min, max):
@@ -39,13 +30,17 @@ def crear_particula_freezer(masa_actual, min, max):
     return Particula(px, py, RADIO_PARTICULA, COLOR_FRIO, VELOCIDAD_MAX_INICIAL, TEMP_AMBIENTE, TEMP_EBULLICION)
 
 # Aca si arranca la cuestion
-def segunda_ley(clock, SCREEN):
+def segunda_ley(clock):
     #COMPLETAR
     masa_actual = 1.5
+
+    potencia_heladera = 500
+    heladera_encendida = True
     paredes_heladera = [((268, 254), (573, 254)), ((573, 254), (573, 589)), ((573, 589), (268, 589)), ((268, 589), (268, 254))]
     particulas_heladera = []
 
-    paredes_freezer = [((268 , 80), (573, 80)), ((573, 80), (573, 220)), ((573, 220), (258, 220)), ((268, 220), (268, 80))]
+    potencia_freezer = 1000
+    paredes_freezer = [((268 , 80), (573, 80)), ((573, 80), (573, 220)), ((573, 220), (268, 220)), ((268, 220), (268, 80))]
     particulas_freezer = []
 
     # creo las particulas de la heladera
@@ -57,6 +52,8 @@ def segunda_ley(clock, SCREEN):
     cantidad_inicial = int(10)
     for _ in range(cantidad_inicial):
         particulas_freezer.append(crear_particula_freezer(masa_actual, MIN_SPAWN, MAX_SPAWN))
+
+    particulas_combinadas = particulas_heladera + particulas_freezer
 
     while True:
         pygame.display.set_caption("Segunda ley - Refrigerador")
@@ -72,6 +69,7 @@ def segunda_ley(clock, SCREEN):
         if keys[pygame.K_q]:
             return
 
+        temperatura_actual = actualizar_frio(dt, particulas_combinadas, potencia_heladera, potencia_freezer, masa_actual, heladera_encendida)
 
         # Manejo de las fisicas de las particulas de la heladera
         # a ver que hace esto
@@ -102,7 +100,7 @@ def segunda_ley(clock, SCREEN):
                     p.vx *= factor
                     p.vy *= factor
 
-            p.update_color(COLOR_FRIO, COLOR_CALIENTE)
+            p.update_color(COLOR_CONGELADO, COLOR_FRIO, TEM_MIN_HELADERA, TEMP_AMBIENTE)
 
 
         # Manejo de fisicas de las particulas del freezer
@@ -133,12 +131,16 @@ def segunda_ley(clock, SCREEN):
                     p.vx *= factor
                     p.vy *= factor
 
-            p.update_color(COLOR_FRIO, COLOR_CALIENTE)
+            p.update_color(COLOR_CONGELADO, COLOR_FRIO, TEM_MIN_FREEZER, TEMP_AMBIENTE)
 
 
         # Dibujo las cuestiones
         SCREEN.blit(FONDO_IMG, (0, 0))
         SCREEN.blit(pygame.transform.scale(MESA_IMG, (1500, 1200)), (-600, 400))
+
+        texto_temp = FONT_HUD.render(f"Temp Prom: {temperatura_actual:.1f}°C", True, COLOR_TEXTO_1)
+
+        SCREEN.blit(texto_temp, (X_MENU_ANCLA, 40))
 
         SCREEN.blit(HELADERA_IMG_ESCALADA, (200, 0))
         for i, j in paredes_heladera:

@@ -35,10 +35,10 @@ while run:
 
     autores_text = "Autores:\n- Burgos Pablo\n- Genaro de Boni\n- Sajnovsky Jose\n- Maxi"
 
-    title_h0 = H0.render("TERMODINAMICA", True, "white")
-    primera_h2 = H2.render("Primera ley", True, "white")
-    segunda_h2 = H2.render("Segunda Ley", True, "white")
-    selecciona_h3 = H3.render("Seleccione su simulacion:", True, "white")
+    title_h0 = H0.render("TERMODINAMICA", True, COLOR_TEXTO_1)
+    primera_h2 = H2.render("Primera ley", True, COLOR_TEXTO_1)
+    segunda_h2 = H2.render("Segunda Ley", True, COLOR_TEXTO_1)
+    selecciona_h3 = H3.render("Seleccione su simulacion:", True, COLOR_TEXTO_1)
 
     SCREEN.blit(FONDO_IMG, (0, 0))
     SCREEN.blit(MESA_IMG_ESCALADA, (275, 500))
@@ -47,7 +47,7 @@ while run:
     SCREEN.blit(primera_h2, (350, 250))
     SCREEN.blit(segunda_h2, (725, 250))
     SCREEN.blit(selecciona_h3, (300, 150))
-    render_multi_line(autores_text, H4, "white", 50, 550, 25)
+    render_multi_line(autores_text, H4, COLOR_TEXTO_1, 50, 550, 25)
 
     # Dibujar botones
     for b in lista_botones:
@@ -60,10 +60,10 @@ while run:
     # Acciones de los botones
     if acciones[0]:   # pava_btn
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
-        primera_ley(clock, SCREEN)
+        primera_ley(clock)
 
     if acciones[1]:   # heladera_btn
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
-        segunda_ley(clock, SCREEN)
+        segunda_ley(clock)
 
     pygame.display.update()
