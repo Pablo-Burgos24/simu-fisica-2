@@ -1,5 +1,6 @@
 import math, random
 from clases import *
+from constantes import SCREEN
 
 def detectar_y_rebotar_circulo_linea(particula, p1, p2):
     dx_line = p2[0] - p1[0]; dy_line = p2[1] - p1[1]; longitud_cuadrada = dx_line**2 + dy_line**2
@@ -101,3 +102,8 @@ def aproximacion_arco():
         PAREDES_CONTENEDOR.append((puntos_del_arco[i], puntos_del_arco[i+1]))
     PAREDES_CONTENEDOR.append(((230, 450), puntos_del_arco[0]))
     PAREDES_CONTENEDOR.append(((550, 450), puntos_del_arco[-1]))
+
+def render_multi_line(text, font, color, x, y, fsize):
+    lines = text.splitlines()
+    for i, l in enumerate(lines):
+        SCREEN.blit(font.render(l, True, color), (x, y + fsize*i))

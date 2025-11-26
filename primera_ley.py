@@ -3,7 +3,7 @@ from constantes import *
 from clases import *
 from funciones import *
 
-def primera_ley(clock, screen, pava_img, sonido_hervir):
+def primera_ley(clock, SCREEN):
     # Variables de Estado
     temperatura_actual = TEMP_AMBIENTE
     tiempo_simulado = 0.0
@@ -130,8 +130,8 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
                     esta_hirviendo = False
                     pava_encendida = True 
 
-                    if sonido_hervir: # <<<--- DETENER SONIDO AL REINICIAR
-                        sonido_hervir.stop()
+                    if SONIDO_HERVIR: # <<<--- DETENER SONIDO AL REINICIAR
+                        SONIDO_HERVIR.stop()
                         sonido_hervir_reproduciendose = False
 
                     # Resetear partículas (y sus temperaturas individuales)
@@ -145,8 +145,8 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
                 elif evento.key == pygame.K_SPACE:
                     pava_encendida = not pava_encendida 
                     if not pava_encendida: # <<<--- DETENER SONIDO AL APAGAR
-                        if sonido_hervir:
-                            sonido_hervir.stop()
+                        if SONIDO_HERVIR:
+                            SONIDO_HERVIR.stop()
                         sonido_hervir_reproduciendose = False
 
         # Hacemos global el acumulador para modificarlo
@@ -185,8 +185,8 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
         # LÓGICA DE VAPORIZACIÓN Y SONIDO
         if esta_hirviendo:
             # Lógica de Sonido
-            if pava_encendida and sonido_hervir and not sonido_hervir_reproduciendose:
-                sonido_hervir.play(loops=-1) # loops=-1 para que se repita
+            if pava_encendida and SONIDO_HERVIR and not sonido_hervir_reproduciendose:
+                SONIDO_HERVIR.play(loops=-1) # loops=-1 para que se repita
                 sonido_hervir_reproduciendose = True
 
             # Lógica de Vaporización
@@ -217,8 +217,8 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
             # Si se acaba el agua
             if masa_agua <= 0:
                 esta_hirviendo = False
-                if sonido_hervir: 
-                    sonido_hervir.stop()
+                if SONIDO_HERVIR: 
+                    SONIDO_HERVIR.stop()
                 sonido_hervir_reproduciendose = False
 
         # El tiempo solo avanza si la pava está encendida
@@ -262,44 +262,45 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
                 particulas_vapor.remove(pv)
 
         #DIBUJAR EL HUD
-        screen.fill("white")
+        SCREEN.blit(FONDO_IMG, (0, 0))
+        SCREEN.blit(pygame.transform.scale(MESA_IMG, (1500, 1200)), (50, 400))
 
-        screen.blit(pava_img, (200, 100))
+        SCREEN.blit(PAVA_IMG_ESCALADA, (200, 100))
 
         for p in particulas:
-            p.dibujar(screen)
+            p.dibujar(SCREEN)
 
         for pv in particulas_vapor:
-            pv.dibujar(screen)
+            pv.dibujar(SCREEN)
 
-        pygame.draw.rect(screen, COLOR_BOTON, pot_up_rect)
-        pygame.draw.rect(screen, COLOR_BOTON, pot_down_rect)
-        pygame.draw.rect(screen, COLOR_BOTON, masa_up_rect)
-        pygame.draw.rect(screen, COLOR_BOTON, masa_down_rect)
+        pygame.draw.rect(SCREEN, COLOR_BOTON, pot_up_rect)
+        pygame.draw.rect(SCREEN, COLOR_BOTON, pot_down_rect)
+        pygame.draw.rect(SCREEN, COLOR_BOTON, masa_up_rect)
+        pygame.draw.rect(SCREEN, COLOR_BOTON, masa_down_rect)
 
         # BOTONES DE POTENCIA
-        pygame.draw.rect(screen, COLOR_BOTON, baja_potencia)
-        pygame.draw.rect(screen, COLOR_BOTON, media_potencia)
-        pygame.draw.rect(screen, COLOR_BOTON, alta_potencia)
+        pygame.draw.rect(SCREEN, COLOR_BOTON, baja_potencia)
+        pygame.draw.rect(SCREEN, COLOR_BOTON, media_potencia)
+        pygame.draw.rect(SCREEN, COLOR_BOTON, alta_potencia)
         
         # BOTONES DE MODO
-        pygame.draw.rect(screen, COLOR_BOTON, modo_mate)
-        pygame.draw.rect(screen, COLOR_BOTON, modo_cafe)
-        pygame.draw.rect(screen, COLOR_BOTON, modo_hervir)
+        pygame.draw.rect(SCREEN, COLOR_BOTON, modo_mate)
+        pygame.draw.rect(SCREEN, COLOR_BOTON, modo_cafe)
+        pygame.draw.rect(SCREEN, COLOR_BOTON, modo_hervir)
     
-        screen.blit(texto_plus, (pot_up_rect.x + 7, pot_up_rect.y + 2))
-        screen.blit(texto_minus, (pot_down_rect.x + 8, pot_down_rect.y + 2))
-        screen.blit(texto_plus, (masa_up_rect.x + 7, masa_up_rect.y + 2))
-        screen.blit(texto_minus, (masa_down_rect.x + 8, masa_down_rect.y + 2))
+        SCREEN.blit(texto_plus, (pot_up_rect.x + 7, pot_up_rect.y + 2))
+        SCREEN.blit(texto_minus, (pot_down_rect.x + 8, pot_down_rect.y + 2))
+        SCREEN.blit(texto_plus, (masa_up_rect.x + 7, masa_up_rect.y + 2))
+        SCREEN.blit(texto_minus, (masa_down_rect.x + 8, masa_down_rect.y + 2))
 
         # Texto de botones de la potencia
-        screen.blit(texto_baja_potencia, (X_MENU_ANCLA, 145))
-        screen.blit(texto_media_potencia, (X_MENU_ANCLA + 150, 145))
-        screen.blit(texto_alta_potencia, (X_MENU_ANCLA + 320, 145))
+        SCREEN.blit(texto_baja_potencia, (X_MENU_ANCLA, 145))
+        SCREEN.blit(texto_media_potencia, (X_MENU_ANCLA + 150, 145))
+        SCREEN.blit(texto_alta_potencia, (X_MENU_ANCLA + 320, 145))
         # Texto de los botones del modo
-        screen.blit(texto_modo_mate, (X_MENU_ANCLA, 175))
-        screen.blit(texto_modo_cafe, (X_MENU_ANCLA + 130, 175))
-        screen.blit(texto_modo_hervir, (X_MENU_ANCLA + 250, 175))
+        SCREEN.blit(texto_modo_mate, (X_MENU_ANCLA, 175))
+        SCREEN.blit(texto_modo_cafe, (X_MENU_ANCLA + 130, 175))
+        SCREEN.blit(texto_modo_hervir, (X_MENU_ANCLA + 250, 175))
         
         color_estado = (0, 150, 0) if pava_encendida else (200, 0, 0) # Verde si ON, Rojo si OFF
 
@@ -323,25 +324,25 @@ def primera_ley(clock, screen, pava_img, sonido_hervir):
         formula_calor_vaporizacion = font_hud.render(f"Ql = mv * Lv ---> {masa_vaporizada_acumulada:.1f} * {CALOR_LATENTE_VAPORIZACION:.0f} = {(masa_vaporizada_acumulada * CALOR_LATENTE_VAPORIZACION):.1f} J", True, (50, 50, 50))
 
 
-        screen.blit(texto_temp, (X_MENU_ANCLA, 20))
-        screen.blit(texto_tiempo, (X_MENU_ANCLA, 50))
-        screen.blit(texto_potencia, (X_MENU_ANCLA + 65, 85)) 
-        screen.blit(texto_masa, (X_MENU_ANCLA + 65, 115))   
-        screen.blit(texto_estado, (X_MENU_ANCLA, 205))
-        screen.blit(texto_particulas, (X_MENU_ANCLA, 235))
-        screen.blit(texto_reset, (X_MENU_ANCLA, 265))
-        screen.blit(texto_toggle, (X_MENU_ANCLA, 285))
-        screen.blit(texto_salir, (X_MENU_ANCLA, 305))
-        screen.blit(texto_ambiente, (X_MENU_ANCLA, 335))
-        screen.blit(linea_punteada, (X_MENU_ANCLA, 370))
-        screen.blit(texto_calculos, (X_MENU_ANCLA, 400))
-        screen.blit(texto_calor_pava, (X_MENU_ANCLA, 430))
-        screen.blit(formula_calor_pava, (X_MENU_ANCLA, 460))
-        screen.blit(texto_calor_agua, (X_MENU_ANCLA, 490))
-        screen.blit(formula_calor_agua, (X_MENU_ANCLA, 520))
+        SCREEN.blit(texto_temp, (X_MENU_ANCLA, 20))
+        SCREEN.blit(texto_tiempo, (X_MENU_ANCLA, 50))
+        SCREEN.blit(texto_potencia, (X_MENU_ANCLA + 65, 85)) 
+        SCREEN.blit(texto_masa, (X_MENU_ANCLA + 65, 115))   
+        SCREEN.blit(texto_estado, (X_MENU_ANCLA, 205))
+        SCREEN.blit(texto_particulas, (X_MENU_ANCLA, 235))
+        SCREEN.blit(texto_reset, (X_MENU_ANCLA, 265))
+        SCREEN.blit(texto_toggle, (X_MENU_ANCLA, 285))
+        SCREEN.blit(texto_salir, (X_MENU_ANCLA, 305))
+        SCREEN.blit(texto_ambiente, (X_MENU_ANCLA, 335))
+        SCREEN.blit(linea_punteada, (X_MENU_ANCLA, 370))
+        SCREEN.blit(texto_calculos, (X_MENU_ANCLA, 400))
+        SCREEN.blit(texto_calor_pava, (X_MENU_ANCLA, 430))
+        SCREEN.blit(formula_calor_pava, (X_MENU_ANCLA, 460))
+        SCREEN.blit(texto_calor_agua, (X_MENU_ANCLA, 490))
+        SCREEN.blit(formula_calor_agua, (X_MENU_ANCLA, 520))
 
         if esta_hirviendo:
-            screen.blit(texto_calor_vaporizacion, (X_MENU_ANCLA, 550))
-            screen.blit(formula_calor_vaporizacion, (X_MENU_ANCLA, 580))
+            SCREEN.blit(texto_calor_vaporizacion, (X_MENU_ANCLA, 550))
+            SCREEN.blit(formula_calor_vaporizacion, (X_MENU_ANCLA, 580))
 
         pygame.display.flip()

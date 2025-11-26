@@ -1,5 +1,31 @@
-import pygame
+import pygame, sys
 pygame.font.init()
+
+
+#Dimensiones de ventana
+W, H = 1280, 720
+SCREEN = pygame.display.set_mode((W, H))
+
+# Imagenes
+try:
+    PAVA_IMG = pygame.image.load('Imagenes/pava.png')
+    HELADERA_IMG = pygame.image.load('Imagenes/heladera.png')
+    MESA_IMG = pygame.image.load('Imagenes/mesa.png')
+    FONDO_IMG = pygame.image.load('Imagenes/pizarra_fondo.jpg')
+    PAVA_IMG_ESCALADA = pygame.transform.scale(PAVA_IMG, (500, 500))
+    HELADERA_IMG_ESCALADA = pygame.transform.scale(HELADERA_IMG, (450, 650))
+    MESA_IMG_ESCALADA = pygame.transform.scale(MESA_IMG, (750, 600))
+except pygame.error as e:
+    print(f"Error al cargar la imagen: {e}")
+    sys.exit()
+
+# Sonidos
+try:
+    SONIDO_HERVIR = pygame.mixer.Sound("Sonidos/boiling.wav") 
+    SONIDO_HERVIR.set_volume(0.5)
+except pygame.error as e:
+    print(f"Error al cargar el sonido: {e}")
+    SONIDO_HERVIR = None
 
 SUB_STEPS = 8
 
